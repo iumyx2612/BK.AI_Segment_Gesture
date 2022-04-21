@@ -23,7 +23,7 @@ parser.add_argument('--video', type=str, default=None, help='Save video .avi for
 parser.add_argument('--videos', type=str, default=None, help='Save folder video .avi form folder input')
 parser.add_argument('--fast_nms', default=True, type=bool,
                         help='Whether to use a faster, but not entirely correct version of NMS.')
-parser.add_argument('--cross_class_nms', default=False, type=bool,
+parser.add_argument('--cross_class_nms', default=True, type=bool,
                         help='Whether compute NMS cross-class or per-class.')
 parser.add_argument('--task', default='mask', type=str,
                         help='video mask binary or video segment')
