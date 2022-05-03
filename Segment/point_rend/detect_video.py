@@ -33,6 +33,8 @@ def generate_masks(prediction):
 def main():
     dir_video = '../peekaboo'
     dir_save = '../peekaboo_mask'
+    if not os.path.exists(dir_save):
+    	os.makedirs(dir_save)
     
     # load model
     cfg = get_cfg()
@@ -43,7 +45,7 @@ def main():
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # set threshold for this model
     # Use a model from PointRend model zoo: https://github.com/facebookresearch/detectron2/tree/master/projects/PointRend#pretrained-models
     cfg.MODEL.WEIGHTS = "detectron2://PointRend/InstanceSegmentation/pointrend_rcnn_R_50_FPN_3x_coco/164955410/model_final_edd263.pkl"
-    cfg.MODEL.DEVICE = 'cpu'
+    cfg.MODEL.DEVICE = 'cuda'
     predictor = DefaultPredictor(cfg)
     
     for vid in tqdm.tqdm(os.listdir(dir_video)):
@@ -58,17 +60,23 @@ def main():
         
         out = cv2.VideoWriter(os.path.join(dir_save, name_video), cv2.VideoWriter_fourcc('M','J','P','G'), int(cap.get(cv2.CAP_PROP_FPS)), (frame_width,frame_height))
         
+		i = 0
         while (cap.isOpened()):
             ret, frame = cap.read()
             if ret == True:
+				i += 1
                 out_image = np.zeros(frame.shape)
-                outputs = predictor(frame)
-                mask = generate_masks(outputs) / 255
-                out_image[:, :, 0] = frame[:, :, 0] ** mask
-                out_image[:, :, 1] = frame[:, :, 1] ** mask
-                out_image[:, :, 2] = frame[:, :, 2] ** mask
-                out_image = np.uint8(out_image)
-                out.write(out_image)
+				try:
+                	outputs = predictor(frame)
+                	mask = generate_masks(outputs) / 255
+                	out_image[:, :, 0] = frame[:, :, 0] ** mask
+                	out_image[:, :, 1] = frame[:, :, 1] ** mask
+                	out_image[:, :, 2] = frame[:, :, 2] ** mask
+                	out_image = np.uint8(out_image)
+                	out.write(out_image)
+                except:
+                	print(f"{vid} o frame thu {i}")
+                	continue
             else:
                 break
                 
