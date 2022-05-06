@@ -13,6 +13,7 @@ from torchvision import transforms
 from utils.data_loading import BasicDataset
 from unet import UNet
 from utils.utils import plot_img_and_mask
+from utils.model import load_checkpoint
 
 
 def predict_img(net,
@@ -229,8 +230,9 @@ if __name__ == '__main__':
     logging.info(f'Loading model {args.model}')
     logging.info(f'Using device {device}')
 
+    load_checkpoint(net, args.model)
+
     net.to(device=device)
-    net.load_state_dict(torch.load(args.model, map_location=device))
 
     logging.info('Model loaded!')
 
