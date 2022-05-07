@@ -71,7 +71,7 @@ class ModelEma(nn.Module):
     """ This class perform model weight EMA
     model_weights = decay * model_weights + (1 - decay) * new_model_weights
     """
-    def __init__(self, model, decay=0.9999, device=None):
+    def __init__(self, model, decay=0.9, device=None):
         super(ModelEma, self).__init__()
         # make a copy of the model for accumulating moving average of weights
         self.module = deepcopy(model)
