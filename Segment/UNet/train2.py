@@ -16,11 +16,14 @@ from utils.data_loading import BasicDataset, CarvanaDataset
 from utils.metrics import dice_loss
 from evaluate import evaluate
 from unet import UNet
+from unet import ResUNet
 
 
-dir_img = Path('../../Dataset/training_data/segment_data/image')
-dir_mask = Path('../../Dataset/training_data/segment_data/mask')
-dir_checkpoint = Path('checkpoints')
+dir_img_train = Path('/content/data/train/image')
+dir_mask_train = Path('/content/data/train/mask')
+dir_img_val = Path('/content/data/val/image')
+dir_mask_val = Path('/content/data/val/mask')
+dir_checkpoint = Path('/content/checkpoints/')
 
 
 def train_net(net,
@@ -35,20 +38,21 @@ def train_net(net,
               model_ema=None):
     # 1. Create dataset
     try:
-        dataset = CarvanaDataset(dir_img, dir_mask, img_scale)
+        train_set = CarvanaDataset(dir_img_train, dir_mask_train, img_scale, task='train')
+        val_set = CarvanaDataset(dir_img_val, dir_mask_val, img_scale, task='val')
     except (AssertionError, RuntimeError):
-        dataset = BasicDataset(dir_img, dir_mask, img_scale)
+        train_set = BasicDataset(dir_img_train, dir_mask_train, img_scale, task='train')
+        val_set = BasicDataset(dir_img_val, dir_mask_val, img_scale, task='val')
 
     # 2. Split into train / validation partitions
-    n_val = int(len(dataset) * val_percent)
-    n_train = len(dataset) - n_val
-    train_set, val_set = random_split(dataset, [n_train, n_val], generator=torch.Generator().manual_seed(0))
+    n_val = len(val_set)
+    n_train = len(train_set) - n_val
+
 
     # 3. Create data loaders
-    loader_args = dict(batch_size=batch_size, num_workers=2, pin_memory=True)
+    loader_args = dict(batch_size=batch_size, num_workers=4, pin_memory=True)
     train_loader = DataLoader(train_set, shuffle=True, **loader_args)
     val_loader = DataLoader(val_set, shuffle=False, drop_last=True, **loader_args)
-
     # (Initialize logging)
     experiment = wandb.init(project='U-Net', resume='allow', anonymous='must')
     experiment.config.update(dict(epochs=epochs, batch_size=batch_size, learning_rate=learning_rate,
@@ -116,39 +120,35 @@ def train_net(net,
                 })
                 pbar.set_postfix(**{'loss (batch)': loss.item()})
 
-                # Evaluation round
-                division_step = (n_train // (10 * batch_size))
-                if division_step > 0:
-                    if global_step % division_step == 0:
-                        histograms = {}
-                        for tag, value in net.named_parameters():
-                            tag = tag.replace('/', '.')
-                            histograms['Weights/' + tag] = wandb.Histogram(value.data.cpu())
-                            histograms['Gradients/' + tag] = wandb.Histogram(value.grad.data.cpu())
+            histograms = {}
+            for tag, value in net.named_parameters():
+                tag = tag.replace('/', '.')
+                histograms['Weights/' + tag] = wandb.Histogram(value.data.cpu())
+                histograms['Gradients/' + tag] = wandb.Histogram(value.grad.data.cpu())
 
-                        F1_score, IoU = evaluate(net, val_loader, device)
+            F1_score, IoU = evaluate(net, val_loader, device)
 
-                        if model_ema:
-                            ema_F1_score, ema_IoU = evaluate(model_ema.module, val_loader, device)
-                            F1_score, IoU = ema_F1_score, ema_IoU
+            if model_ema:
+                ema_F1_score, ema_IoU = evaluate(model_ema.module, val_loader, device)
+                F1_score, IoU = ema_F1_score, ema_IoU
 
-                        scheduler.step(F1_score)
-                        scheduler.step(IoU)
+            scheduler.step(F1_score)
+            scheduler.step(IoU)
 
-                        logging.info('Validation Dice score: {} and IOU score: {}'.format(F1_score, IoU))
-                        experiment.log({
-                            'learning rate': optimizer.param_groups[0]['lr'],
-                            'validation Dice': F1_score,
-                            'validation IoU': IoU,
-                            'images': wandb.Image(images[0].cpu()),
-                            'masks': {
-                                'true': wandb.Image(true_masks[0].float().cpu()),
-                                'pred': wandb.Image(torch.softmax(masks_pred, dim=1).argmax(dim=1)[0].float().cpu()),
-                            },
-                            'step': global_step,
-                            'epoch': epoch,
-                            **histograms
-                        })
+            logging.info('Validation Dice score: {} and IOU score: {}'.format(F1_score, IoU))
+            experiment.log({
+                'learning rate': optimizer.param_groups[0]['lr'],
+                'validation Dice': F1_score,
+                'validation IoU': IoU,
+                'images': wandb.Image(images[0].cpu()),
+                'masks': {
+                    'true': wandb.Image(true_masks[0].float().cpu()),
+                    'pred': wandb.Image(torch.softmax(masks_pred, dim=1).argmax(dim=1)[0].float().cpu()),
+                },
+                'step': global_step,
+                'epoch': epoch,
+                **histograms
+            })
 
         if save_checkpoint:
             Path(dir_checkpoint).mkdir(parents=True, exist_ok=True)
@@ -184,7 +184,7 @@ if __name__ == '__main__':
     # Change here to adapt to your data
     # n_channels=3 for RGB images
     # n_classes is the number of probabilities you want to get per pixel
-    net = UNet(n_channels=3, n_classes=args.classes, bilinear=args.bilinear)
+    net = ResUNet(n_channels=3, n_classes=args.classes, bilinear=args.bilinear)
 
     logging.info(f'Network:\n'
                  f'\t{net.n_channels} input channels\n'
