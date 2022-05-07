@@ -1,0 +1,1297 @@
+2022-05-07 14:18:53,330 - mmdet - INFO - Environment info:
+------------------------------------------------------------
+sys.platform: linux
+Python: 3.9.12 (main, Apr  5 2022, 06:56:58) [GCC 7.5.0]
+CUDA available: True
+GPU 0,1: NVIDIA GeForce RTX 3090
+CUDA_HOME: None
+GCC: gcc (Ubuntu 9.4.0-1ubuntu1~20.04.1) 9.4.0
+PyTorch: 1.10.1
+PyTorch compiling details: PyTorch built with:
+  - GCC 7.3
+  - C++ Version: 201402
+  - Intel(R) oneAPI Math Kernel Library Version 2021.4-Product Build 20210904 for Intel(R) 64 architecture applications
+  - Intel(R) MKL-DNN v2.2.3 (Git Hash 7336ca9f055cf1bfa13efb658fe15dc9b41f0740)
+  - OpenMP 201511 (a.k.a. OpenMP 4.5)
+  - LAPACK is enabled (usually provided by MKL)
+  - NNPACK is enabled
+  - CPU capability usage: AVX512
+  - CUDA Runtime 11.3
+  - NVCC architecture flags: -gencode;arch=compute_37,code=sm_37;-gencode;arch=compute_50,code=sm_50;-gencode;arch=compute_60,code=sm_60;-gencode;arch=compute_61,code=sm_61;-gencode;arch=compute_70,code=sm_70;-gencode;arch=compute_75,code=sm_75;-gencode;arch=compute_80,code=sm_80;-gencode;arch=compute_86,code=sm_86;-gencode;arch=compute_37,code=compute_37
+  - CuDNN 8.2
+  - Magma 2.5.2
+  - Build settings: BLAS_INFO=mkl, BUILD_TYPE=Release, CUDA_VERSION=11.3, CUDNN_VERSION=8.2.0, CXX_COMPILER=/opt/rh/devtoolset-7/root/usr/bin/c++, CXX_FLAGS= -Wno-deprecated -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -fopenmp -DNDEBUG -DUSE_KINETO -DUSE_FBGEMM -DUSE_QNNPACK -DUSE_PYTORCH_QNNPACK -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -DEDGE_PROFILER_USE_KINETO -O2 -fPIC -Wno-narrowing -Wall -Wextra -Werror=return-type -Wno-missing-field-initializers -Wno-type-limits -Wno-array-bounds -Wno-unknown-pragmas -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-unused-result -Wno-unused-local-typedefs -Wno-strict-overflow -Wno-strict-aliasing -Wno-error=deprecated-declarations -Wno-stringop-overflow -Wno-psabi -Wno-error=pedantic -Wno-error=redundant-decls -Wno-error=old-style-cast -fdiagnostics-color=always -faligned-new -Wno-unused-but-set-variable -Wno-maybe-uninitialized -fno-math-errno -fno-trapping-math -Werror=format -Wno-stringop-overflow, LAPACK_INFO=mkl, PERF_WITH_AVX=1, PERF_WITH_AVX2=1, PERF_WITH_AVX512=1, TORCH_VERSION=1.10.1, USE_CUDA=ON, USE_CUDNN=ON, USE_EXCEPTION_PTR=1, USE_GFLAGS=OFF, USE_GLOG=OFF, USE_MKL=ON, USE_MKLDNN=ON, USE_MPI=OFF, USE_NCCL=ON, USE_NNPACK=ON, USE_OPENMP=ON,
+
+TorchVision: 0.11.2
+OpenCV: 4.5.5
+MMCV: 1.5.0
+MMCV Compiler: GCC 7.3
+MMCV CUDA Compiler: 11.3
+MMDetection: 2.24.1+73b4e65
+------------------------------------------------------------
+
+2022-05-07 14:18:54,259 - mmdet - INFO - Distributed training: False
+2022-05-07 14:18:55,150 - mmdet - INFO - Config:
+optimizer = dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001)
+optimizer_config = dict(grad_clip=None)
+lr_config = dict(
+    policy='step',
+    warmup='linear',
+    warmup_iters=500,
+    warmup_ratio=0.001,
+    step=[8, 11])
+runner = dict(type='EpochBasedRunner', max_epochs=12)
+checkpoint_config = dict(interval=1)
+log_config = dict(interval=50, hooks=[dict(type='TextLoggerHook')])
+custom_hooks = [dict(type='SetEpochInfoHook')]
+dist_params = dict(backend='nccl')
+log_level = 'INFO'
+load_from = None
+resume_from = None
+workflow = [('train', 1)]
+opencv_num_threads = 0
+mp_start_method = 'fork'
+auto_scale_lr = dict(enable=False, base_batch_size=16)
+model = dict(
+    type='TOOD',
+    backbone=dict(
+        type='ResNet',
+        depth=50,
+        num_stages=4,
+        out_indices=(0, 1, 2, 3),
+        frozen_stages=1,
+        norm_cfg=dict(type='BN', requires_grad=True),
+        norm_eval=True,
+        style='pytorch',
+        init_cfg=dict(type='Pretrained', checkpoint='torchvision://resnet50')),
+    neck=dict(
+        type='FPN',
+        in_channels=[256, 512, 1024, 2048],
+        out_channels=256,
+        start_level=1,
+        add_extra_convs='on_output',
+        num_outs=5),
+    bbox_head=dict(
+        type='TOODHead',
+        num_classes=63,
+        in_channels=256,
+        stacked_convs=6,
+        feat_channels=256,
+        anchor_type='anchor_free',
+        anchor_generator=dict(
+            type='AnchorGenerator',
+            ratios=[1.0],
+            octave_base_scale=8,
+            scales_per_octave=1,
+            strides=[8, 16, 32, 64, 128]),
+        bbox_coder=dict(
+            type='DeltaXYWHBBoxCoder',
+            target_means=[0.0, 0.0, 0.0, 0.0],
+            target_stds=[0.1, 0.1, 0.2, 0.2]),
+        initial_loss_cls=dict(
+            type='FocalLoss',
+            use_sigmoid=True,
+            activated=True,
+            gamma=2.0,
+            alpha=0.25,
+            loss_weight=1.0),
+        loss_cls=dict(
+            type='QualityFocalLoss',
+            use_sigmoid=True,
+            activated=True,
+            beta=2.0,
+            loss_weight=1.0),
+        loss_bbox=dict(type='GIoULoss', loss_weight=2.0)),
+    train_cfg=dict(
+        initial_epoch=4,
+        initial_assigner=dict(type='ATSSAssigner', topk=9),
+        assigner=dict(type='TaskAlignedAssigner', topk=13),
+        alpha=1,
+        beta=6,
+        allowed_border=-1,
+        pos_weight=-1,
+        debug=False),
+    test_cfg=dict(
+        nms_pre=1000,
+        min_bbox_size=0,
+        score_thr=0.05,
+        nms=dict(type='nms', iou_threshold=0.6),
+        max_per_img=100))
+data_root = '/mnt/sda/yolo_experiments/roboflow/'
+dataset_type = 'CocoDataset'
+img_norm_cfg = dict(
+    mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
+train_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(type='LoadAnnotations', with_bbox=True),
+    dict(type='Resize', img_scale=(640, 640), keep_ratio=True),
+    dict(type='RandomFlip', flip_ratio=0.5),
+    dict(
+        type='Normalize',
+        mean=[123.675, 116.28, 103.53],
+        std=[58.395, 57.12, 57.375],
+        to_rgb=True),
+    dict(type='Pad', size_divisor=32),
+    dict(type='DefaultFormatBundle'),
+    dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels'])
+]
+test_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(
+        type='MultiScaleFlipAug',
+        img_scale=(640, 640),
+        flip=False,
+        transforms=[
+            dict(type='Resize', keep_ratio=True),
+            dict(type='RandomFlip'),
+            dict(
+                type='Normalize',
+                mean=[123.675, 116.28, 103.53],
+                std=[58.395, 57.12, 57.375],
+                to_rgb=True),
+            dict(type='Pad', size_divisor=32),
+            dict(type='ImageToTensor', keys=['img']),
+            dict(type='Collect', keys=['img'])
+        ])
+]
+classes = ('Beetroot', 'Avocado', 'Kiwi', 'Peach', 'Mandarine', 'Orange',
+           'Ginger', 'Banana', 'Kumquats', 'Onion', 'Cactus', 'Plum', 'Kaki',
+           'Tomato', 'Pineapple', 'Cauliflower', 'Pepper', 'Melon',
+           'Nectarine', 'Papaya', 'Pear', 'Redcurrant', 'Redcurrant', 'Apple',
+           'Huckleberry', 'Guava', 'Limes', 'Granadilla', 'Lemon', 'Mango',
+           'Strawberry', 'Physalis', 'Quince', 'Kohlrabi', 'Pepino',
+           'Rambutan', 'Salak', 'Eggplant', 'Maracuja', 'Nut', 'Walnut',
+           'Grapefruit', 'Mangostan', 'Pomegranate', 'Hazelnut', 'Mulberry',
+           'Tamarillo', 'Tangelo', 'Cantaloupe', 'Potato', 'Chestnut',
+           'Cherry', 'Clementine', 'Lychee', 'Apricot', 'Dates', 'Cocos',
+           'Pomelo', 'Grape', 'Passion', 'Carambula', 'Blueberry', 'Pitahaya',
+           'Raspberry')
+data = dict(
+    samples_per_gpu=16,
+    workers_per_gpu=4,
+    train=dict(
+        type='CocoDataset',
+        ann_file=
+        '/mnt/sda/yolo_experiments/roboflow/train/_annotations.coco.json',
+        img_prefix='/mnt/sda/yolo_experiments/roboflow/train/',
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(type='LoadAnnotations', with_bbox=True),
+            dict(type='Resize', img_scale=(640, 640), keep_ratio=True),
+            dict(type='RandomFlip', flip_ratio=0.5),
+            dict(
+                type='Normalize',
+                mean=[123.675, 116.28, 103.53],
+                std=[58.395, 57.12, 57.375],
+                to_rgb=True),
+            dict(type='Pad', size_divisor=32),
+            dict(type='DefaultFormatBundle'),
+            dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels'])
+        ],
+        classes=('Beetroot', 'Avocado', 'Kiwi', 'Peach', 'Mandarine', 'Orange',
+                 'Ginger', 'Banana', 'Kumquats', 'Onion', 'Cactus', 'Plum',
+                 'Kaki', 'Tomato', 'Pineapple', 'Cauliflower', 'Pepper',
+                 'Melon', 'Nectarine', 'Papaya', 'Pear', 'Redcurrant',
+                 'Redcurrant', 'Apple', 'Huckleberry', 'Guava', 'Limes',
+                 'Granadilla', 'Lemon', 'Mango', 'Strawberry', 'Physalis',
+                 'Quince', 'Kohlrabi', 'Pepino', 'Rambutan', 'Salak',
+                 'Eggplant', 'Maracuja', 'Nut', 'Walnut', 'Grapefruit',
+                 'Mangostan', 'Pomegranate', 'Hazelnut', 'Mulberry',
+                 'Tamarillo', 'Tangelo', 'Cantaloupe', 'Potato', 'Chestnut',
+                 'Cherry', 'Clementine', 'Lychee', 'Apricot', 'Dates', 'Cocos',
+                 'Pomelo', 'Grape', 'Passion', 'Carambula', 'Blueberry',
+                 'Pitahaya', 'Raspberry')),
+    val=dict(
+        type='CocoDataset',
+        ann_file=
+        '/mnt/sda/yolo_experiments/roboflow/valid/_annotations.coco.json',
+        img_prefix='/mnt/sda/yolo_experiments/roboflow/valid/',
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(
+                type='MultiScaleFlipAug',
+                img_scale=(640, 640),
+                flip=False,
+                transforms=[
+                    dict(type='Resize', keep_ratio=True),
+                    dict(type='RandomFlip'),
+                    dict(
+                        type='Normalize',
+                        mean=[123.675, 116.28, 103.53],
+                        std=[58.395, 57.12, 57.375],
+                        to_rgb=True),
+                    dict(type='Pad', size_divisor=32),
+                    dict(type='ImageToTensor', keys=['img']),
+                    dict(type='Collect', keys=['img'])
+                ])
+        ],
+        classes=('Beetroot', 'Avocado', 'Kiwi', 'Peach', 'Mandarine', 'Orange',
+                 'Ginger', 'Banana', 'Kumquats', 'Onion', 'Cactus', 'Plum',
+                 'Kaki', 'Tomato', 'Pineapple', 'Cauliflower', 'Pepper',
+                 'Melon', 'Nectarine', 'Papaya', 'Pear', 'Redcurrant',
+                 'Redcurrant', 'Apple', 'Huckleberry', 'Guava', 'Limes',
+                 'Granadilla', 'Lemon', 'Mango', 'Strawberry', 'Physalis',
+                 'Quince', 'Kohlrabi', 'Pepino', 'Rambutan', 'Salak',
+                 'Eggplant', 'Maracuja', 'Nut', 'Walnut', 'Grapefruit',
+                 'Mangostan', 'Pomegranate', 'Hazelnut', 'Mulberry',
+                 'Tamarillo', 'Tangelo', 'Cantaloupe', 'Potato', 'Chestnut',
+                 'Cherry', 'Clementine', 'Lychee', 'Apricot', 'Dates', 'Cocos',
+                 'Pomelo', 'Grape', 'Passion', 'Carambula', 'Blueberry',
+                 'Pitahaya', 'Raspberry')),
+    test=dict(
+        type='CocoDataset',
+        ann_file=
+        '/mnt/sda/yolo_experiments/roboflow/valid/_annotations.coco.json',
+        img_prefix='/mnt/sda/yolo_experiments/roboflow/valid/',
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(
+                type='MultiScaleFlipAug',
+                img_scale=(640, 640),
+                flip=False,
+                transforms=[
+                    dict(type='Resize', keep_ratio=True),
+                    dict(type='RandomFlip'),
+                    dict(
+                        type='Normalize',
+                        mean=[123.675, 116.28, 103.53],
+                        std=[58.395, 57.12, 57.375],
+                        to_rgb=True),
+                    dict(type='Pad', size_divisor=32),
+                    dict(type='ImageToTensor', keys=['img']),
+                    dict(type='Collect', keys=['img'])
+                ])
+        ],
+        classes=('Beetroot', 'Avocado', 'Kiwi', 'Peach', 'Mandarine', 'Orange',
+                 'Ginger', 'Banana', 'Kumquats', 'Onion', 'Cactus', 'Plum',
+                 'Kaki', 'Tomato', 'Pineapple', 'Cauliflower', 'Pepper',
+                 'Melon', 'Nectarine', 'Papaya', 'Pear', 'Redcurrant',
+                 'Redcurrant', 'Apple', 'Huckleberry', 'Guava', 'Limes',
+                 'Granadilla', 'Lemon', 'Mango', 'Strawberry', 'Physalis',
+                 'Quince', 'Kohlrabi', 'Pepino', 'Rambutan', 'Salak',
+                 'Eggplant', 'Maracuja', 'Nut', 'Walnut', 'Grapefruit',
+                 'Mangostan', 'Pomegranate', 'Hazelnut', 'Mulberry',
+                 'Tamarillo', 'Tangelo', 'Cantaloupe', 'Potato', 'Chestnut',
+                 'Cherry', 'Clementine', 'Lychee', 'Apricot', 'Dates', 'Cocos',
+                 'Pomelo', 'Grape', 'Passion', 'Carambula', 'Blueberry',
+                 'Pitahaya', 'Raspberry')))
+evaluation = dict(interval=1, metric='bbox')
+work_dir = 'workdir/fruit/tood/baseline'
+auto_resume = False
+gpu_ids = [0]
+
+2022-05-07 14:18:55,150 - mmdet - INFO - Set random seed to 500039344, deterministic: False
+2022-05-07 14:18:55,364 - mmdet - INFO - initialize ResNet with init_cfg {'type': 'Pretrained', 'checkpoint': 'torchvision://resnet50'}
+2022-05-07 14:18:55,431 - mmdet - INFO - initialize FPN with init_cfg {'type': 'Xavier', 'layer': 'Conv2d', 'distribution': 'uniform'}
+Name of parameter - Initialization information
+
+backbone.conv1.weight - torch.Size([64, 3, 7, 7]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.bn1.weight - torch.Size([64]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.bn1.bias - torch.Size([64]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.0.conv1.weight - torch.Size([64, 64, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.0.bn1.weight - torch.Size([64]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.0.bn1.bias - torch.Size([64]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.0.conv2.weight - torch.Size([64, 64, 3, 3]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.0.bn2.weight - torch.Size([64]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.0.bn2.bias - torch.Size([64]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.0.conv3.weight - torch.Size([256, 64, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.0.bn3.weight - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.0.bn3.bias - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.0.downsample.0.weight - torch.Size([256, 64, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.0.downsample.1.weight - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.0.downsample.1.bias - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.1.conv1.weight - torch.Size([64, 256, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.1.bn1.weight - torch.Size([64]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.1.bn1.bias - torch.Size([64]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.1.conv2.weight - torch.Size([64, 64, 3, 3]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.1.bn2.weight - torch.Size([64]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.1.bn2.bias - torch.Size([64]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.1.conv3.weight - torch.Size([256, 64, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.1.bn3.weight - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.1.bn3.bias - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.2.conv1.weight - torch.Size([64, 256, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.2.bn1.weight - torch.Size([64]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.2.bn1.bias - torch.Size([64]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.2.conv2.weight - torch.Size([64, 64, 3, 3]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.2.bn2.weight - torch.Size([64]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.2.bn2.bias - torch.Size([64]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.2.conv3.weight - torch.Size([256, 64, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.2.bn3.weight - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer1.2.bn3.bias - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.0.conv1.weight - torch.Size([128, 256, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.0.bn1.weight - torch.Size([128]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.0.bn1.bias - torch.Size([128]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.0.conv2.weight - torch.Size([128, 128, 3, 3]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.0.bn2.weight - torch.Size([128]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.0.bn2.bias - torch.Size([128]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.0.conv3.weight - torch.Size([512, 128, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.0.bn3.weight - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.0.bn3.bias - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.0.downsample.0.weight - torch.Size([512, 256, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.0.downsample.1.weight - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.0.downsample.1.bias - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.1.conv1.weight - torch.Size([128, 512, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.1.bn1.weight - torch.Size([128]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.1.bn1.bias - torch.Size([128]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.1.conv2.weight - torch.Size([128, 128, 3, 3]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.1.bn2.weight - torch.Size([128]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.1.bn2.bias - torch.Size([128]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.1.conv3.weight - torch.Size([512, 128, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.1.bn3.weight - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.1.bn3.bias - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.2.conv1.weight - torch.Size([128, 512, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.2.bn1.weight - torch.Size([128]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.2.bn1.bias - torch.Size([128]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.2.conv2.weight - torch.Size([128, 128, 3, 3]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.2.bn2.weight - torch.Size([128]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.2.bn2.bias - torch.Size([128]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.2.conv3.weight - torch.Size([512, 128, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.2.bn3.weight - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.2.bn3.bias - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.3.conv1.weight - torch.Size([128, 512, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.3.bn1.weight - torch.Size([128]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.3.bn1.bias - torch.Size([128]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.3.conv2.weight - torch.Size([128, 128, 3, 3]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.3.bn2.weight - torch.Size([128]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.3.bn2.bias - torch.Size([128]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.3.conv3.weight - torch.Size([512, 128, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.3.bn3.weight - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer2.3.bn3.bias - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.0.conv1.weight - torch.Size([256, 512, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.0.bn1.weight - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.0.bn1.bias - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.0.conv2.weight - torch.Size([256, 256, 3, 3]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.0.bn2.weight - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.0.bn2.bias - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.0.conv3.weight - torch.Size([1024, 256, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.0.bn3.weight - torch.Size([1024]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.0.bn3.bias - torch.Size([1024]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.0.downsample.0.weight - torch.Size([1024, 512, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.0.downsample.1.weight - torch.Size([1024]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.0.downsample.1.bias - torch.Size([1024]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.1.conv1.weight - torch.Size([256, 1024, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.1.bn1.weight - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.1.bn1.bias - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.1.conv2.weight - torch.Size([256, 256, 3, 3]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.1.bn2.weight - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.1.bn2.bias - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.1.conv3.weight - torch.Size([1024, 256, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.1.bn3.weight - torch.Size([1024]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.1.bn3.bias - torch.Size([1024]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.2.conv1.weight - torch.Size([256, 1024, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.2.bn1.weight - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.2.bn1.bias - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.2.conv2.weight - torch.Size([256, 256, 3, 3]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.2.bn2.weight - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.2.bn2.bias - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.2.conv3.weight - torch.Size([1024, 256, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.2.bn3.weight - torch.Size([1024]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.2.bn3.bias - torch.Size([1024]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.3.conv1.weight - torch.Size([256, 1024, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.3.bn1.weight - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.3.bn1.bias - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.3.conv2.weight - torch.Size([256, 256, 3, 3]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.3.bn2.weight - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.3.bn2.bias - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.3.conv3.weight - torch.Size([1024, 256, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.3.bn3.weight - torch.Size([1024]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.3.bn3.bias - torch.Size([1024]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.4.conv1.weight - torch.Size([256, 1024, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.4.bn1.weight - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.4.bn1.bias - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.4.conv2.weight - torch.Size([256, 256, 3, 3]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.4.bn2.weight - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.4.bn2.bias - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.4.conv3.weight - torch.Size([1024, 256, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.4.bn3.weight - torch.Size([1024]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.4.bn3.bias - torch.Size([1024]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.5.conv1.weight - torch.Size([256, 1024, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.5.bn1.weight - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.5.bn1.bias - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.5.conv2.weight - torch.Size([256, 256, 3, 3]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.5.bn2.weight - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.5.bn2.bias - torch.Size([256]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.5.conv3.weight - torch.Size([1024, 256, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.5.bn3.weight - torch.Size([1024]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer3.5.bn3.bias - torch.Size([1024]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.0.conv1.weight - torch.Size([512, 1024, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.0.bn1.weight - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.0.bn1.bias - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.0.conv2.weight - torch.Size([512, 512, 3, 3]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.0.bn2.weight - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.0.bn2.bias - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.0.conv3.weight - torch.Size([2048, 512, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.0.bn3.weight - torch.Size([2048]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.0.bn3.bias - torch.Size([2048]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.0.downsample.0.weight - torch.Size([2048, 1024, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.0.downsample.1.weight - torch.Size([2048]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.0.downsample.1.bias - torch.Size([2048]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.1.conv1.weight - torch.Size([512, 2048, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.1.bn1.weight - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.1.bn1.bias - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.1.conv2.weight - torch.Size([512, 512, 3, 3]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.1.bn2.weight - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.1.bn2.bias - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.1.conv3.weight - torch.Size([2048, 512, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.1.bn3.weight - torch.Size([2048]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.1.bn3.bias - torch.Size([2048]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.2.conv1.weight - torch.Size([512, 2048, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.2.bn1.weight - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.2.bn1.bias - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.2.conv2.weight - torch.Size([512, 512, 3, 3]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.2.bn2.weight - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.2.bn2.bias - torch.Size([512]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.2.conv3.weight - torch.Size([2048, 512, 1, 1]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.2.bn3.weight - torch.Size([2048]):
+PretrainedInit: load from torchvision://resnet50
+
+backbone.layer4.2.bn3.bias - torch.Size([2048]):
+PretrainedInit: load from torchvision://resnet50
+
+neck.lateral_convs.0.conv.weight - torch.Size([256, 512, 1, 1]):
+XavierInit: gain=1, distribution=uniform, bias=0
+
+neck.lateral_convs.0.conv.bias - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+neck.lateral_convs.1.conv.weight - torch.Size([256, 1024, 1, 1]):
+XavierInit: gain=1, distribution=uniform, bias=0
+
+neck.lateral_convs.1.conv.bias - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+neck.lateral_convs.2.conv.weight - torch.Size([256, 2048, 1, 1]):
+XavierInit: gain=1, distribution=uniform, bias=0
+
+neck.lateral_convs.2.conv.bias - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+neck.fpn_convs.0.conv.weight - torch.Size([256, 256, 3, 3]):
+XavierInit: gain=1, distribution=uniform, bias=0
+
+neck.fpn_convs.0.conv.bias - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+neck.fpn_convs.1.conv.weight - torch.Size([256, 256, 3, 3]):
+XavierInit: gain=1, distribution=uniform, bias=0
+
+neck.fpn_convs.1.conv.bias - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+neck.fpn_convs.2.conv.weight - torch.Size([256, 256, 3, 3]):
+XavierInit: gain=1, distribution=uniform, bias=0
+
+neck.fpn_convs.2.conv.bias - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+neck.fpn_convs.3.conv.weight - torch.Size([256, 256, 3, 3]):
+XavierInit: gain=1, distribution=uniform, bias=0
+
+neck.fpn_convs.3.conv.bias - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+neck.fpn_convs.4.conv.weight - torch.Size([256, 256, 3, 3]):
+XavierInit: gain=1, distribution=uniform, bias=0
+
+neck.fpn_convs.4.conv.bias - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.inter_convs.0.conv.weight - torch.Size([256, 256, 3, 3]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.inter_convs.0.gn.weight - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.inter_convs.0.gn.bias - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.inter_convs.1.conv.weight - torch.Size([256, 256, 3, 3]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.inter_convs.1.gn.weight - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.inter_convs.1.gn.bias - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.inter_convs.2.conv.weight - torch.Size([256, 256, 3, 3]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.inter_convs.2.gn.weight - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.inter_convs.2.gn.bias - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.inter_convs.3.conv.weight - torch.Size([256, 256, 3, 3]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.inter_convs.3.gn.weight - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.inter_convs.3.gn.bias - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.inter_convs.4.conv.weight - torch.Size([256, 256, 3, 3]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.inter_convs.4.gn.weight - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.inter_convs.4.gn.bias - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.inter_convs.5.conv.weight - torch.Size([256, 256, 3, 3]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.inter_convs.5.gn.weight - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.inter_convs.5.gn.bias - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.cls_decomp.layer_attention.0.weight - torch.Size([32, 1536, 1, 1]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.cls_decomp.layer_attention.0.bias - torch.Size([32]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.cls_decomp.layer_attention.2.weight - torch.Size([6, 32, 1, 1]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.cls_decomp.layer_attention.2.bias - torch.Size([6]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.cls_decomp.reduction_conv.conv.weight - torch.Size([256, 1536, 1, 1]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.cls_decomp.reduction_conv.gn.weight - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.cls_decomp.reduction_conv.gn.bias - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.reg_decomp.layer_attention.0.weight - torch.Size([32, 1536, 1, 1]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.reg_decomp.layer_attention.0.bias - torch.Size([32]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.reg_decomp.layer_attention.2.weight - torch.Size([6, 32, 1, 1]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.reg_decomp.layer_attention.2.bias - torch.Size([6]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.reg_decomp.reduction_conv.conv.weight - torch.Size([256, 1536, 1, 1]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.reg_decomp.reduction_conv.gn.weight - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.reg_decomp.reduction_conv.gn.bias - torch.Size([256]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.tood_cls.weight - torch.Size([63, 256, 3, 3]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.tood_cls.bias - torch.Size([63]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.tood_reg.weight - torch.Size([4, 256, 3, 3]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.tood_reg.bias - torch.Size([4]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.cls_prob_module.0.weight - torch.Size([64, 1536, 1, 1]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.cls_prob_module.0.bias - torch.Size([64]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.cls_prob_module.2.weight - torch.Size([1, 64, 3, 3]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.cls_prob_module.2.bias - torch.Size([1]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.reg_offset_module.0.weight - torch.Size([64, 1536, 1, 1]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.reg_offset_module.0.bias - torch.Size([64]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.reg_offset_module.2.weight - torch.Size([8, 64, 3, 3]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.reg_offset_module.2.bias - torch.Size([8]):
+Initialized by user-defined `init_weights` in TOODHead
+
+bbox_head.scales.0.scale - torch.Size([]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.scales.1.scale - torch.Size([]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.scales.2.scale - torch.Size([]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.scales.3.scale - torch.Size([]):
+The value is the same before and after calling `init_weights` of TOOD
+
+bbox_head.scales.4.scale - torch.Size([]):
+The value is the same before and after calling `init_weights` of TOOD
+2022-05-07 14:18:57,940 - mmdet - INFO - Automatic scaling of learning rate (LR) has been disabled.
+2022-05-07 14:18:58,014 - mmdet - INFO - Start running, host: shadow_user@ai-master, work_dir: /mnt/sda/yolo_experiments/mmdetection/workdir/fruit/tood/baseline
+2022-05-07 14:18:58,015 - mmdet - INFO - Hooks will be executed in the following order:
+before_run:
+(VERY_HIGH   ) StepLrUpdaterHook
+(NORMAL      ) CheckpointHook
+(LOW         ) EvalHook
+(VERY_LOW    ) TextLoggerHook
+ --------------------
+before_train_epoch:
+(VERY_HIGH   ) StepLrUpdaterHook
+(NORMAL      ) SetEpochInfoHook
+(LOW         ) IterTimerHook
+(LOW         ) EvalHook
+(VERY_LOW    ) TextLoggerHook
+ --------------------
+before_train_iter:
+(VERY_HIGH   ) StepLrUpdaterHook
+(LOW         ) IterTimerHook
+(LOW         ) EvalHook
+ --------------------
+after_train_iter:
+(ABOVE_NORMAL) OptimizerHook
+(NORMAL      ) CheckpointHook
+(LOW         ) IterTimerHook
+(LOW         ) EvalHook
+(VERY_LOW    ) TextLoggerHook
+ --------------------
+after_train_epoch:
+(NORMAL      ) CheckpointHook
+(LOW         ) EvalHook
+(VERY_LOW    ) TextLoggerHook
+ --------------------
+before_val_epoch:
+(LOW         ) IterTimerHook
+(VERY_LOW    ) TextLoggerHook
+ --------------------
+before_val_iter:
+(LOW         ) IterTimerHook
+ --------------------
+after_val_iter:
+(LOW         ) IterTimerHook
+ --------------------
+after_val_epoch:
+(VERY_LOW    ) TextLoggerHook
+ --------------------
+after_run:
+(VERY_LOW    ) TextLoggerHook
+ --------------------
+2022-05-07 14:18:58,015 - mmdet - INFO - workflow: [('train', 1)], max: 12 epochs
+2022-05-07 14:18:58,015 - mmdet - INFO - Checkpoints will be saved to /mnt/sda/yolo_experiments/mmdetection/workdir/fruit/tood/baseline by HardDiskBackend.
+2022-05-07 14:19:20,035 - mmdet - INFO - Epoch [1][50/313]	lr: 9.890e-04, eta: 0:27:07, time: 0.439, data_time: 0.062, memory: 8757, loss_cls: 1.0744, loss_bbox: 1.1262, loss: 2.2006
+2022-05-07 14:19:39,190 - mmdet - INFO - Epoch [1][100/313]	lr: 1.988e-03, eta: 0:25:03, time: 0.383, data_time: 0.015, memory: 8757, loss_cls: 0.7423, loss_bbox: 0.7739, loss: 1.5163
+2022-05-07 14:19:58,369 - mmdet - INFO - Epoch [1][150/313]	lr: 2.987e-03, eta: 0:24:09, time: 0.384, data_time: 0.014, memory: 8757, loss_cls: 0.5975, loss_bbox: 0.4428, loss: 1.0403
+2022-05-07 14:20:17,575 - mmdet - INFO - Epoch [1][200/313]	lr: 3.986e-03, eta: 0:23:33, time: 0.384, data_time: 0.016, memory: 8757, loss_cls: 0.5196, loss_bbox: 0.3856, loss: 0.9053
+2022-05-07 14:20:36,827 - mmdet - INFO - Epoch [1][250/313]	lr: 4.985e-03, eta: 0:23:04, time: 0.385, data_time: 0.016, memory: 8757, loss_cls: 0.4601, loss_bbox: 0.3303, loss: 0.7903
+2022-05-07 14:20:56,062 - mmdet - INFO - Epoch [1][300/313]	lr: 5.984e-03, eta: 0:22:39, time: 0.385, data_time: 0.015, memory: 8757, loss_cls: 0.4171, loss_bbox: 0.2998, loss: 0.7168
+2022-05-07 14:21:01,121 - mmdet - INFO - Saving checkpoint at 1 epochs
+2022-05-07 14:21:28,507 - mmdet - INFO - Evaluating bbox...
+2022-05-07 14:21:37,464 - mmdet - INFO -
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.317
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=1000 ] = 0.461
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=1000 ] = 0.379
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.292
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.388
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.689
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=300 ] = 0.689
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=1000 ] = 0.689
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.632
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.733
+
+2022-05-07 14:21:37,716 - mmdet - INFO - Exp name: tood_r50_fpn_1x_coco.py
+2022-05-07 14:21:37,720 - mmdet - INFO - Epoch(val) [1][1000]	bbox_mAP: 0.3170, bbox_mAP_50: 0.4610, bbox_mAP_75: 0.3790, bbox_mAP_s: -1.0000, bbox_mAP_m: 0.2920, bbox_mAP_l: 0.3880, bbox_mAP_copypaste: 0.317 0.461 0.379 -1.000 0.292 0.388
+2022-05-07 14:21:59,437 - mmdet - INFO - Epoch [2][50/313]	lr: 7.243e-03, eta: 0:21:45, time: 0.433, data_time: 0.062, memory: 8757, loss_cls: 0.3709, loss_bbox: 0.2797, loss: 0.6507
+2022-05-07 14:22:18,730 - mmdet - INFO - Epoch [2][100/313]	lr: 8.242e-03, eta: 0:21:26, time: 0.386, data_time: 0.015, memory: 8757, loss_cls: 0.3434, loss_bbox: 0.3023, loss: 0.6457
+2022-05-07 14:22:37,987 - mmdet - INFO - Epoch [2][150/313]	lr: 9.241e-03, eta: 0:21:07, time: 0.385, data_time: 0.014, memory: 8757, loss_cls: 0.3303, loss_bbox: 0.2726, loss: 0.6029
+2022-05-07 14:22:57,251 - mmdet - INFO - Epoch [2][200/313]	lr: 1.000e-02, eta: 0:20:48, time: 0.385, data_time: 0.013, memory: 8757, loss_cls: 0.3310, loss_bbox: 0.2614, loss: 0.5924
+2022-05-07 14:23:16,545 - mmdet - INFO - Epoch [2][250/313]	lr: 1.000e-02, eta: 0:20:29, time: 0.386, data_time: 0.015, memory: 8757, loss_cls: 0.2968, loss_bbox: 0.2622, loss: 0.5590
+2022-05-07 14:23:35,859 - mmdet - INFO - Epoch [2][300/313]	lr: 1.000e-02, eta: 0:20:10, time: 0.386, data_time: 0.016, memory: 8757, loss_cls: 0.2934, loss_bbox: 0.2515, loss: 0.5449
+2022-05-07 14:23:40,944 - mmdet - INFO - Saving checkpoint at 2 epochs
+2022-05-07 14:24:07,941 - mmdet - INFO - Evaluating bbox...
+2022-05-07 14:24:15,722 - mmdet - INFO -
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.590
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=1000 ] = 0.752
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=1000 ] = 0.694
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.544
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.644
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.793
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=300 ] = 0.793
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=1000 ] = 0.793
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.767
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.812
+
+2022-05-07 14:24:15,940 - mmdet - INFO - Exp name: tood_r50_fpn_1x_coco.py
+2022-05-07 14:24:15,940 - mmdet - INFO - Epoch(val) [2][1000]	bbox_mAP: 0.5900, bbox_mAP_50: 0.7520, bbox_mAP_75: 0.6940, bbox_mAP_s: -1.0000, bbox_mAP_m: 0.5440, bbox_mAP_l: 0.6440, bbox_mAP_copypaste: 0.590 0.752 0.694 -1.000 0.544 0.644
+2022-05-07 14:24:37,676 - mmdet - INFO - Epoch [3][50/313]	lr: 1.000e-02, eta: 0:19:34, time: 0.433, data_time: 0.062, memory: 8757, loss_cls: 0.2550, loss_bbox: 0.2376, loss: 0.4926
+2022-05-07 14:24:56,960 - mmdet - INFO - Epoch [3][100/313]	lr: 1.000e-02, eta: 0:19:16, time: 0.386, data_time: 0.015, memory: 8757, loss_cls: 0.2429, loss_bbox: 0.2258, loss: 0.4687
+2022-05-07 14:25:16,249 - mmdet - INFO - Epoch [3][150/313]	lr: 1.000e-02, eta: 0:18:57, time: 0.386, data_time: 0.015, memory: 8757, loss_cls: 0.2315, loss_bbox: 0.2251, loss: 0.4566
+2022-05-07 14:25:35,545 - mmdet - INFO - Epoch [3][200/313]	lr: 1.000e-02, eta: 0:18:39, time: 0.386, data_time: 0.015, memory: 8757, loss_cls: 0.2135, loss_bbox: 0.2164, loss: 0.4300
+2022-05-07 14:25:54,947 - mmdet - INFO - Epoch [3][250/313]	lr: 1.000e-02, eta: 0:18:21, time: 0.388, data_time: 0.016, memory: 8757, loss_cls: 0.2131, loss_bbox: 0.2125, loss: 0.4256
+2022-05-07 14:26:14,309 - mmdet - INFO - Epoch [3][300/313]	lr: 1.000e-02, eta: 0:18:03, time: 0.387, data_time: 0.014, memory: 8757, loss_cls: 0.2138, loss_bbox: 0.2024, loss: 0.4161
+2022-05-07 14:26:19,394 - mmdet - INFO - Saving checkpoint at 3 epochs
+2022-05-07 14:26:46,374 - mmdet - INFO - Evaluating bbox...
+2022-05-07 14:26:52,411 - mmdet - INFO -
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.655
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=1000 ] = 0.828
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=1000 ] = 0.782
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.626
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.691
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.802
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=300 ] = 0.802
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=1000 ] = 0.802
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.777
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.819
+
+2022-05-07 14:26:52,567 - mmdet - INFO - Exp name: tood_r50_fpn_1x_coco.py
+2022-05-07 14:26:52,567 - mmdet - INFO - Epoch(val) [3][1000]	bbox_mAP: 0.6550, bbox_mAP_50: 0.8280, bbox_mAP_75: 0.7820, bbox_mAP_s: -1.0000, bbox_mAP_m: 0.6260, bbox_mAP_l: 0.6910, bbox_mAP_copypaste: 0.655 0.828 0.782 -1.000 0.626 0.691
+2022-05-07 14:27:14,209 - mmdet - INFO - Epoch [4][50/313]	lr: 1.000e-02, eta: 0:17:31, time: 0.432, data_time: 0.063, memory: 8757, loss_cls: 0.1879, loss_bbox: 0.2037, loss: 0.3916
+2022-05-07 14:27:33,535 - mmdet - INFO - Epoch [4][100/313]	lr: 1.000e-02, eta: 0:17:13, time: 0.387, data_time: 0.015, memory: 8757, loss_cls: 0.1744, loss_bbox: 0.2000, loss: 0.3744
+2022-05-07 14:27:52,852 - mmdet - INFO - Epoch [4][150/313]	lr: 1.000e-02, eta: 0:16:55, time: 0.386, data_time: 0.014, memory: 8757, loss_cls: 0.1935, loss_bbox: 0.1993, loss: 0.3927
+2022-05-07 14:28:12,217 - mmdet - INFO - Epoch [4][200/313]	lr: 1.000e-02, eta: 0:16:37, time: 0.387, data_time: 0.016, memory: 8757, loss_cls: 0.1783, loss_bbox: 0.1957, loss: 0.3740
+2022-05-07 14:28:31,552 - mmdet - INFO - Epoch [4][250/313]	lr: 1.000e-02, eta: 0:16:18, time: 0.387, data_time: 0.015, memory: 8757, loss_cls: 0.1824, loss_bbox: 0.1904, loss: 0.3728
+2022-05-07 14:28:50,890 - mmdet - INFO - Epoch [4][300/313]	lr: 1.000e-02, eta: 0:16:00, time: 0.387, data_time: 0.014, memory: 8757, loss_cls: 0.1769, loss_bbox: 0.1869, loss: 0.3638
+2022-05-07 14:28:55,989 - mmdet - INFO - Saving checkpoint at 4 epochs
+2022-05-07 14:29:23,070 - mmdet - INFO - Evaluating bbox...
+2022-05-07 14:29:29,044 - mmdet - INFO -
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.709
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=1000 ] = 0.872
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=1000 ] = 0.817
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.673
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.748
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.826
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=300 ] = 0.826
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=1000 ] = 0.826
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.807
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.840
+
+2022-05-07 14:29:29,207 - mmdet - INFO - Exp name: tood_r50_fpn_1x_coco.py
+2022-05-07 14:29:29,207 - mmdet - INFO - Epoch(val) [4][1000]	bbox_mAP: 0.7090, bbox_mAP_50: 0.8720, bbox_mAP_75: 0.8170, bbox_mAP_s: -1.0000, bbox_mAP_m: 0.6730, bbox_mAP_l: 0.7480, bbox_mAP_copypaste: 0.709 0.872 0.817 -1.000 0.673 0.748
+2022-05-07 14:29:51,094 - mmdet - INFO - Epoch [5][50/313]	lr: 1.000e-02, eta: 0:15:31, time: 0.436, data_time: 0.064, memory: 8758, loss_cls: 0.2681, loss_bbox: 0.1803, loss: 0.4483
+2022-05-07 14:30:10,592 - mmdet - INFO - Epoch [5][100/313]	lr: 1.000e-02, eta: 0:15:13, time: 0.390, data_time: 0.016, memory: 8758, loss_cls: 0.2460, loss_bbox: 0.1871, loss: 0.4330
+2022-05-07 14:30:30,089 - mmdet - INFO - Epoch [5][150/313]	lr: 1.000e-02, eta: 0:14:55, time: 0.390, data_time: 0.015, memory: 8758, loss_cls: 0.2299, loss_bbox: 0.1798, loss: 0.4097
+2022-05-07 14:30:49,631 - mmdet - INFO - Epoch [5][200/313]	lr: 1.000e-02, eta: 0:14:37, time: 0.391, data_time: 0.014, memory: 8758, loss_cls: 0.1869, loss_bbox: 0.1724, loss: 0.3593
+2022-05-07 14:31:09,185 - mmdet - INFO - Epoch [5][250/313]	lr: 1.000e-02, eta: 0:14:19, time: 0.391, data_time: 0.015, memory: 8758, loss_cls: 0.1876, loss_bbox: 0.1768, loss: 0.3644
+2022-05-07 14:31:28,825 - mmdet - INFO - Epoch [5][300/313]	lr: 1.000e-02, eta: 0:14:00, time: 0.393, data_time: 0.016, memory: 8758, loss_cls: 0.1742, loss_bbox: 0.1741, loss: 0.3483
+2022-05-07 14:31:33,988 - mmdet - INFO - Saving checkpoint at 5 epochs
+2022-05-07 14:32:00,859 - mmdet - INFO - Evaluating bbox...
+2022-05-07 14:32:05,873 - mmdet - INFO -
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.723
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=1000 ] = 0.890
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=1000 ] = 0.841
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.700
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.752
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.828
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=300 ] = 0.828
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=1000 ] = 0.828
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.807
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.842
+
+2022-05-07 14:32:06,003 - mmdet - INFO - Exp name: tood_r50_fpn_1x_coco.py
+2022-05-07 14:32:06,003 - mmdet - INFO - Epoch(val) [5][1000]	bbox_mAP: 0.7230, bbox_mAP_50: 0.8900, bbox_mAP_75: 0.8410, bbox_mAP_s: -1.0000, bbox_mAP_m: 0.7000, bbox_mAP_l: 0.7520, bbox_mAP_copypaste: 0.723 0.890 0.841 -1.000 0.700 0.752
+2022-05-07 14:32:27,924 - mmdet - INFO - Epoch [6][50/313]	lr: 1.000e-02, eta: 0:13:34, time: 0.437, data_time: 0.063, memory: 8758, loss_cls: 0.1498, loss_bbox: 0.1698, loss: 0.3197
+2022-05-07 14:32:47,469 - mmdet - INFO - Epoch [6][100/313]	lr: 1.000e-02, eta: 0:13:15, time: 0.391, data_time: 0.014, memory: 8758, loss_cls: 0.1241, loss_bbox: 0.1666, loss: 0.2908
+2022-05-07 14:33:07,016 - mmdet - INFO - Epoch [6][150/313]	lr: 1.000e-02, eta: 0:12:57, time: 0.391, data_time: 0.014, memory: 8758, loss_cls: 0.1042, loss_bbox: 0.1716, loss: 0.2758
+2022-05-07 14:33:26,518 - mmdet - INFO - Epoch [6][200/313]	lr: 1.000e-02, eta: 0:12:38, time: 0.390, data_time: 0.016, memory: 8758, loss_cls: 0.1446, loss_bbox: 0.1710, loss: 0.3156
+2022-05-07 14:33:46,085 - mmdet - INFO - Epoch [6][250/313]	lr: 1.000e-02, eta: 0:12:20, time: 0.391, data_time: 0.017, memory: 8758, loss_cls: 0.1401, loss_bbox: 0.1686, loss: 0.3087
+2022-05-07 14:34:05,606 - mmdet - INFO - Epoch [6][300/313]	lr: 1.000e-02, eta: 0:12:01, time: 0.390, data_time: 0.016, memory: 8758, loss_cls: 0.1339, loss_bbox: 0.1806, loss: 0.3145
+2022-05-07 14:34:10,750 - mmdet - INFO - Saving checkpoint at 6 epochs
+2022-05-07 14:34:37,487 - mmdet - INFO - Evaluating bbox...
+2022-05-07 14:34:42,139 - mmdet - INFO -
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.726
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=1000 ] = 0.882
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=1000 ] = 0.842
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.696
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.759
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.832
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=300 ] = 0.832
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=1000 ] = 0.832
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.807
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.852
+
+2022-05-07 14:34:42,264 - mmdet - INFO - Exp name: tood_r50_fpn_1x_coco.py
+2022-05-07 14:34:42,264 - mmdet - INFO - Epoch(val) [6][1000]	bbox_mAP: 0.7260, bbox_mAP_50: 0.8820, bbox_mAP_75: 0.8420, bbox_mAP_s: -1.0000, bbox_mAP_m: 0.6960, bbox_mAP_l: 0.7590, bbox_mAP_copypaste: 0.726 0.882 0.842 -1.000 0.696 0.759
+2022-05-07 14:35:04,247 - mmdet - INFO - Epoch [7][50/313]	lr: 1.000e-02, eta: 0:11:35, time: 0.438, data_time: 0.063, memory: 8758, loss_cls: 0.1268, loss_bbox: 0.1552, loss: 0.2820
+2022-05-07 14:35:23,830 - mmdet - INFO - Epoch [7][100/313]	lr: 1.000e-02, eta: 0:11:17, time: 0.392, data_time: 0.015, memory: 8758, loss_cls: 0.0918, loss_bbox: 0.1603, loss: 0.2521
+2022-05-07 14:35:43,388 - mmdet - INFO - Epoch [7][150/313]	lr: 1.000e-02, eta: 0:10:58, time: 0.391, data_time: 0.015, memory: 8758, loss_cls: 0.1157, loss_bbox: 0.1618, loss: 0.2776
+2022-05-07 14:36:02,970 - mmdet - INFO - Epoch [7][200/313]	lr: 1.000e-02, eta: 0:10:39, time: 0.392, data_time: 0.016, memory: 8758, loss_cls: 0.1036, loss_bbox: 0.1595, loss: 0.2631
+2022-05-07 14:36:22,637 - mmdet - INFO - Epoch [7][250/313]	lr: 1.000e-02, eta: 0:10:21, time: 0.393, data_time: 0.016, memory: 8758, loss_cls: 0.0948, loss_bbox: 0.1600, loss: 0.2548
+2022-05-07 14:36:42,263 - mmdet - INFO - Epoch [7][300/313]	lr: 1.000e-02, eta: 0:10:02, time: 0.393, data_time: 0.016, memory: 8758, loss_cls: 0.0915, loss_bbox: 0.1655, loss: 0.2570
+2022-05-07 14:36:47,394 - mmdet - INFO - Saving checkpoint at 7 epochs
+2022-05-07 14:37:14,444 - mmdet - INFO - Evaluating bbox...
+2022-05-07 14:37:18,151 - mmdet - INFO -
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.754
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=1000 ] = 0.916
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=1000 ] = 0.867
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.722
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.787
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.836
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=300 ] = 0.836
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=1000 ] = 0.836
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.808
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.856
+
+2022-05-07 14:37:18,239 - mmdet - INFO - Exp name: tood_r50_fpn_1x_coco.py
+2022-05-07 14:37:18,242 - mmdet - INFO - Epoch(val) [7][1000]	bbox_mAP: 0.7540, bbox_mAP_50: 0.9160, bbox_mAP_75: 0.8670, bbox_mAP_s: -1.0000, bbox_mAP_m: 0.7220, bbox_mAP_l: 0.7870, bbox_mAP_copypaste: 0.754 0.916 0.867 -1.000 0.722 0.787
+2022-05-07 14:37:40,306 - mmdet - INFO - Epoch [8][50/313]	lr: 1.000e-02, eta: 0:09:37, time: 0.440, data_time: 0.062, memory: 8758, loss_cls: 0.1036, loss_bbox: 0.1561, loss: 0.2597
+2022-05-07 14:37:59,942 - mmdet - INFO - Epoch [8][100/313]	lr: 1.000e-02, eta: 0:09:18, time: 0.393, data_time: 0.015, memory: 8758, loss_cls: 0.0991, loss_bbox: 0.1590, loss: 0.2581
+2022-05-07 14:38:19,395 - mmdet - INFO - Epoch [8][150/313]	lr: 1.000e-02, eta: 0:08:59, time: 0.389, data_time: 0.015, memory: 8758, loss_cls: 0.0847, loss_bbox: 0.1506, loss: 0.2353
+2022-05-07 14:38:38,998 - mmdet - INFO - Epoch [8][200/313]	lr: 1.000e-02, eta: 0:08:40, time: 0.392, data_time: 0.016, memory: 8758, loss_cls: 0.0747, loss_bbox: 0.1509, loss: 0.2256
+2022-05-07 14:38:58,593 - mmdet - INFO - Epoch [8][250/313]	lr: 1.000e-02, eta: 0:08:22, time: 0.392, data_time: 0.015, memory: 8758, loss_cls: 0.0916, loss_bbox: 0.1564, loss: 0.2481
+2022-05-07 14:39:18,213 - mmdet - INFO - Epoch [8][300/313]	lr: 1.000e-02, eta: 0:08:03, time: 0.392, data_time: 0.014, memory: 8758, loss_cls: 0.0768, loss_bbox: 0.1534, loss: 0.2302
+2022-05-07 14:39:23,362 - mmdet - INFO - Saving checkpoint at 8 epochs
+2022-05-07 14:39:50,190 - mmdet - INFO - Evaluating bbox...
+2022-05-07 14:39:54,255 - mmdet - INFO -
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.763
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=1000 ] = 0.911
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=1000 ] = 0.873
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.740
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.791
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.849
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=300 ] = 0.849
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=1000 ] = 0.849
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.827
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.865
+
+2022-05-07 14:39:54,354 - mmdet - INFO - Exp name: tood_r50_fpn_1x_coco.py
+2022-05-07 14:39:54,354 - mmdet - INFO - Epoch(val) [8][1000]	bbox_mAP: 0.7630, bbox_mAP_50: 0.9110, bbox_mAP_75: 0.8730, bbox_mAP_s: -1.0000, bbox_mAP_m: 0.7400, bbox_mAP_l: 0.7910, bbox_mAP_copypaste: 0.763 0.911 0.873 -1.000 0.740 0.791
+2022-05-07 14:40:16,219 - mmdet - INFO - Epoch [9][50/313]	lr: 1.000e-03, eta: 0:07:38, time: 0.436, data_time: 0.063, memory: 8758, loss_cls: 0.0581, loss_bbox: 0.1376, loss: 0.1957
+2022-05-07 14:40:35,683 - mmdet - INFO - Epoch [9][100/313]	lr: 1.000e-03, eta: 0:07:19, time: 0.389, data_time: 0.016, memory: 8758, loss_cls: 0.0412, loss_bbox: 0.1294, loss: 0.1707
+2022-05-07 14:40:55,263 - mmdet - INFO - Epoch [9][150/313]	lr: 1.000e-03, eta: 0:07:00, time: 0.392, data_time: 0.014, memory: 8758, loss_cls: 0.0409, loss_bbox: 0.1295, loss: 0.1704
+2022-05-07 14:41:14,809 - mmdet - INFO - Epoch [9][200/313]	lr: 1.000e-03, eta: 0:06:41, time: 0.391, data_time: 0.015, memory: 8758, loss_cls: 0.0315, loss_bbox: 0.1258, loss: 0.1573
+2022-05-07 14:41:34,382 - mmdet - INFO - Epoch [9][250/313]	lr: 1.000e-03, eta: 0:06:22, time: 0.391, data_time: 0.015, memory: 8758, loss_cls: 0.0399, loss_bbox: 0.1253, loss: 0.1652
+2022-05-07 14:41:53,952 - mmdet - INFO - Epoch [9][300/313]	lr: 1.000e-03, eta: 0:06:03, time: 0.391, data_time: 0.015, memory: 8758, loss_cls: 0.0313, loss_bbox: 0.1262, loss: 0.1575
+2022-05-07 14:41:59,063 - mmdet - INFO - Saving checkpoint at 9 epochs
+2022-05-07 14:42:25,547 - mmdet - INFO - Evaluating bbox...
+2022-05-07 14:42:28,239 - mmdet - INFO -
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.810
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=1000 ] = 0.951
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=1000 ] = 0.911
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.781
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.837
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.861
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=300 ] = 0.861
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=1000 ] = 0.861
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.838
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.878
+
+2022-05-07 14:42:28,297 - mmdet - INFO - Exp name: tood_r50_fpn_1x_coco.py
+2022-05-07 14:42:28,301 - mmdet - INFO - Epoch(val) [9][1000]	bbox_mAP: 0.8100, bbox_mAP_50: 0.9510, bbox_mAP_75: 0.9110, bbox_mAP_s: -1.0000, bbox_mAP_m: 0.7810, bbox_mAP_l: 0.8370, bbox_mAP_copypaste: 0.810 0.951 0.911 -1.000 0.781 0.837
+2022-05-07 14:42:50,297 - mmdet - INFO - Epoch [10][50/313]	lr: 1.000e-03, eta: 0:05:38, time: 0.439, data_time: 0.062, memory: 8758, loss_cls: 0.0292, loss_bbox: 0.1180, loss: 0.1473
+2022-05-07 14:43:09,754 - mmdet - INFO - Epoch [10][100/313]	lr: 1.000e-03, eta: 0:05:19, time: 0.389, data_time: 0.015, memory: 8758, loss_cls: 0.0308, loss_bbox: 0.1186, loss: 0.1493
+2022-05-07 14:43:29,253 - mmdet - INFO - Epoch [10][150/313]	lr: 1.000e-03, eta: 0:05:01, time: 0.390, data_time: 0.015, memory: 8758, loss_cls: 0.0252, loss_bbox: 0.1195, loss: 0.1448
+2022-05-07 14:43:48,746 - mmdet - INFO - Epoch [10][200/313]	lr: 1.000e-03, eta: 0:04:42, time: 0.390, data_time: 0.014, memory: 8758, loss_cls: 0.0347, loss_bbox: 0.1211, loss: 0.1558
+2022-05-07 14:44:08,242 - mmdet - INFO - Epoch [10][250/313]	lr: 1.000e-03, eta: 0:04:23, time: 0.390, data_time: 0.016, memory: 8758, loss_cls: 0.0331, loss_bbox: 0.1216, loss: 0.1548
+2022-05-07 14:44:27,803 - mmdet - INFO - Epoch [10][300/313]	lr: 1.000e-03, eta: 0:04:04, time: 0.391, data_time: 0.015, memory: 8758, loss_cls: 0.0326, loss_bbox: 0.1227, loss: 0.1553
+2022-05-07 14:44:32,941 - mmdet - INFO - Saving checkpoint at 10 epochs
+2022-05-07 14:44:59,301 - mmdet - INFO - Evaluating bbox...
+2022-05-07 14:45:01,753 - mmdet - INFO -
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.814
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=1000 ] = 0.953
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=1000 ] = 0.914
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.785
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.840
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.863
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=300 ] = 0.863
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=1000 ] = 0.863
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.840
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.879
+
+2022-05-07 14:45:01,804 - mmdet - INFO - Exp name: tood_r50_fpn_1x_coco.py
+2022-05-07 14:45:01,807 - mmdet - INFO - Epoch(val) [10][1000]	bbox_mAP: 0.8140, bbox_mAP_50: 0.9530, bbox_mAP_75: 0.9140, bbox_mAP_s: -1.0000, bbox_mAP_m: 0.7850, bbox_mAP_l: 0.8400, bbox_mAP_copypaste: 0.814 0.953 0.914 -1.000 0.785 0.840
+2022-05-07 14:45:23,739 - mmdet - INFO - Epoch [11][50/313]	lr: 1.000e-03, eta: 0:03:39, time: 0.437, data_time: 0.063, memory: 8758, loss_cls: 0.0279, loss_bbox: 0.1157, loss: 0.1436
+2022-05-07 14:45:43,251 - mmdet - INFO - Epoch [11][100/313]	lr: 1.000e-03, eta: 0:03:20, time: 0.390, data_time: 0.014, memory: 8758, loss_cls: 0.0313, loss_bbox: 0.1183, loss: 0.1496
+2022-05-07 14:46:02,772 - mmdet - INFO - Epoch [11][150/313]	lr: 1.000e-03, eta: 0:03:01, time: 0.390, data_time: 0.015, memory: 8758, loss_cls: 0.0256, loss_bbox: 0.1145, loss: 0.1401
+2022-05-07 14:46:22,308 - mmdet - INFO - Epoch [11][200/313]	lr: 1.000e-03, eta: 0:02:42, time: 0.391, data_time: 0.014, memory: 8758, loss_cls: 0.0246, loss_bbox: 0.1163, loss: 0.1408
+2022-05-07 14:46:41,880 - mmdet - INFO - Epoch [11][250/313]	lr: 1.000e-03, eta: 0:02:23, time: 0.391, data_time: 0.014, memory: 8758, loss_cls: 0.0317, loss_bbox: 0.1175, loss: 0.1493
+2022-05-07 14:47:01,419 - mmdet - INFO - Epoch [11][300/313]	lr: 1.000e-03, eta: 0:02:04, time: 0.391, data_time: 0.015, memory: 8758, loss_cls: 0.0287, loss_bbox: 0.1142, loss: 0.1429
+2022-05-07 14:47:06,559 - mmdet - INFO - Saving checkpoint at 11 epochs
+2022-05-07 14:47:32,937 - mmdet - INFO - Evaluating bbox...
+2022-05-07 14:47:35,189 - mmdet - INFO -
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.814
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=1000 ] = 0.954
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=1000 ] = 0.916
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.786
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.839
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.861
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=300 ] = 0.861
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=1000 ] = 0.861
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.838
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.878
+
+2022-05-07 14:47:35,235 - mmdet - INFO - Exp name: tood_r50_fpn_1x_coco.py
+2022-05-07 14:47:35,238 - mmdet - INFO - Epoch(val) [11][1000]	bbox_mAP: 0.8140, bbox_mAP_50: 0.9540, bbox_mAP_75: 0.9160, bbox_mAP_s: -1.0000, bbox_mAP_m: 0.7860, bbox_mAP_l: 0.8390, bbox_mAP_copypaste: 0.814 0.954 0.916 -1.000 0.786 0.839
+2022-05-07 14:47:57,152 - mmdet - INFO - Epoch [12][50/313]	lr: 1.000e-04, eta: 0:01:40, time: 0.437, data_time: 0.062, memory: 8758, loss_cls: 0.0323, loss_bbox: 0.1132, loss: 0.1454
+2022-05-07 14:48:16,646 - mmdet - INFO - Epoch [12][100/313]	lr: 1.000e-04, eta: 0:01:21, time: 0.390, data_time: 0.015, memory: 8758, loss_cls: 0.0244, loss_bbox: 0.1126, loss: 0.1370
+2022-05-07 14:48:36,179 - mmdet - INFO - Epoch [12][150/313]	lr: 1.000e-04, eta: 0:01:02, time: 0.391, data_time: 0.015, memory: 8758, loss_cls: 0.0284, loss_bbox: 0.1104, loss: 0.1388
+2022-05-07 14:48:55,738 - mmdet - INFO - Epoch [12][200/313]	lr: 1.000e-04, eta: 0:00:43, time: 0.391, data_time: 0.014, memory: 8758, loss_cls: 0.0256, loss_bbox: 0.1119, loss: 0.1374
+2022-05-07 14:49:15,229 - mmdet - INFO - Epoch [12][250/313]	lr: 1.000e-04, eta: 0:00:24, time: 0.390, data_time: 0.014, memory: 8758, loss_cls: 0.0215, loss_bbox: 0.1099, loss: 0.1314
+2022-05-07 14:49:34,764 - mmdet - INFO - Epoch [12][300/313]	lr: 1.000e-04, eta: 0:00:04, time: 0.391, data_time: 0.016, memory: 8758, loss_cls: 0.0280, loss_bbox: 0.1134, loss: 0.1414
+2022-05-07 14:49:39,931 - mmdet - INFO - Saving checkpoint at 12 epochs
+2022-05-07 14:50:06,403 - mmdet - INFO - Evaluating bbox...
+2022-05-07 14:50:08,688 - mmdet - INFO -
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.816
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=1000 ] = 0.954
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=1000 ] = 0.915
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.789
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.842
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.864
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=300 ] = 0.864
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=1000 ] = 0.864
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=1000 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=1000 ] = 0.842
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=1000 ] = 0.880
+
+2022-05-07 14:50:08,738 - mmdet - INFO - Exp name: tood_r50_fpn_1x_coco.py
+2022-05-07 14:50:08,741 - mmdet - INFO - Epoch(val) [12][1000]	bbox_mAP: 0.8160, bbox_mAP_50: 0.9540, bbox_mAP_75: 0.9150, bbox_mAP_s: -1.0000, bbox_mAP_m: 0.7890, bbox_mAP_l: 0.8420, bbox_mAP_copypaste: 0.816 0.954 0.915 -1.000 0.789 0.842

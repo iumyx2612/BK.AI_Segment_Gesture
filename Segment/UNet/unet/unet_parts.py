@@ -75,3 +75,24 @@ class OutConv(nn.Module):
 
     def forward(self, x):
         return self.conv(x)
+
+
+class DownBottleNeck(nn.Module):
+    """ This class reduce the spatial output of feature map using Conv
+    and apply skip connection
+    """
+    def __init__(self, in_channels, out_channels):
+        super(DownBottleNeck, self).__init__()
+        self.down_conv = nn.Conv2d(in_channels=in_channels,
+                                   out_channels=in_channels,
+                                   kernel_size=2,
+                                   stride=2,
+                                   padding=0)
+        self.double_conv = DoubleConv(in_channels, out_channels - in_channels)
+
+    def forward(self, x):
+        x = self.down_conv(x)
+        x_skip = x
+        x = self.double_conv(x)
+        x = torch.cat([x, x_skip], dim=1)
+        return x
