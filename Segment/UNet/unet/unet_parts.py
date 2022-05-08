@@ -25,6 +25,23 @@ class DoubleConv(nn.Module):
         return self.double_conv(x)
 
 
+class DoubleConvDense(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(DoubleConvDense, self).__init__()
+        growth_rate = int((out_channels - in_channels) / 2)
+        self.double_conv = nn.Sequential(
+            nn.Conv2d(in_channels, in_channels + growth_rate, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(in_channels + growth_rate),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels + growth_rate, out_channels, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
+
+    def forward(self, x):
+        return self.double_conv(x)
+
+
 class Down(nn.Module):
     """Downscaling with maxpool then double conv"""
 
@@ -77,12 +94,12 @@ class OutConv(nn.Module):
         return self.conv(x)
 
 
-class DownBottleNeck(nn.Module):
+class DownSkip(nn.Module):
     """ This class reduce the spatial output of feature map using Conv
     and apply skip connection
     """
     def __init__(self, in_channels, out_channels):
-        super(DownBottleNeck, self).__init__()
+        super(DownSkip, self).__init__()
         self.down_conv = nn.Conv2d(in_channels=in_channels,
                                    out_channels=in_channels,
                                    kernel_size=2,
@@ -96,3 +113,50 @@ class DownBottleNeck(nn.Module):
         x = self.double_conv(x)
         x = torch.cat([x, x_skip], dim=1)
         return x
+
+class DownDense(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(DownDense, self).__init__()
+        # replace GAP with conv stride 2
+        self.down_conv = nn.Conv2d(in_channels=in_channels,
+                                   out_channels=in_channels,
+                                   kernel_size=2,
+                                   stride=2,
+                                   padding=0)
+        self.double_conv = DoubleConvDense(in_channels, out_channels)
+
+    def forward(self, x):
+        x = self.down_conv(x)
+        x = self.double_conv(x)
+        return x
+
+
+class UpBottleNeck(nn.Module):
+    def __init__(self, in_channels, out_channels, bilinear=False):
+        super(UpBottleNeck, self).__init__()
+
+        if bilinear:
+            self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+            self.conv = DoubleConv(in_channels, out_channels, in_channels // 2)
+        else:
+            self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
+            self.bottleneck = nn.Conv2d(in_channels // 2, out_channels // 2, kernel_size=1)
+            self.conv = DoubleConv(in_channels, out_channels // 2)
+
+    def forward(self, x1, x2):
+        x1 = self.up(x1) # double spatial, half channel
+        # input is CHW
+        diffY = x2.size()[2] - x1.size()[2]
+        diffX = x2.size()[3] - x1.size()[3]
+
+        x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
+                        diffY // 2, diffY - diffY // 2])
+        # if you have padding issues, see
+        # https://github.com/HaiyongJiang/U-Net-Pytorch-Unstructured-Buggy/commit/0e854509c2cea854e247a9c615f175f76fbb2e3a
+        # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
+        x = torch.cat([x2, x1], dim=1)
+        x = self.conv(x)
+        x1 = self.bottleneck(x1)
+        x = torch.cat([x, x1], dim=1)
+        return x
+

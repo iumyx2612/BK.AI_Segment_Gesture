@@ -1,2 +1,2 @@
 from .unet_model import UNet
-from .res_unet import ResUNet
+from .res_unet import ResUNet, ResUnetv2
