@@ -16,7 +16,7 @@ from utils.data_loading import BasicDataset, CarvanaDataset
 from utils.metrics import dice_loss
 from evaluate import evaluate
 from unet import UNet
-from unet import ResUNet
+from unet import ResUNet, ResUnetv2
 
 
 dir_img_train = Path('/content/data/train/image')
