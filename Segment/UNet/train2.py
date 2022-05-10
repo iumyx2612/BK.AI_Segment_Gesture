@@ -19,10 +19,10 @@ from unet import UNet
 from unet import ResUNet, ResUnetv2
 
 
-dir_img_train = Path('/content/data/train/image')
-dir_mask_train = Path('/content/data/train/mask')
-dir_img_val = Path('/content/data/val/image')
-dir_mask_val = Path('/content/data/val/mask')
+dir_img_train = Path("../../Dataset/segment_data/data/train/image")
+dir_mask_train = Path("../../Dataset/segment_data/data/train/mask")
+dir_img_val = Path("../../Dataset/segment_data/data/val/image")
+dir_mask_val = Path("../../Dataset/segment_data/data/val/mask")
 dir_checkpoint = Path('/content/checkpoints/')
 
 
@@ -35,7 +35,10 @@ def train_net(net,
               save_checkpoint: bool = True,
               img_scale: float = 0.5,
               amp: bool = False,
-              model_ema=None):
+              model_ema=None,
+              _optimizer=None,
+              start_epoch=None):
+    start_epoch = start_epoch if start_epoch is not None else 1
     # 1. Create dataset
     try:
         train_set = CarvanaDataset(dir_img_train, dir_mask_train, img_scale, task='train')
@@ -50,7 +53,7 @@ def train_net(net,
 
 
     # 3. Create data loaders
-    loader_args = dict(batch_size=batch_size, num_workers=4, pin_memory=True)
+    loader_args = dict(batch_size=batch_size, num_workers=2, pin_memory=True)
     train_loader = DataLoader(train_set, shuffle=True, **loader_args)
     val_loader = DataLoader(val_set, shuffle=False, drop_last=True, **loader_args)
     # (Initialize logging)
@@ -73,13 +76,15 @@ def train_net(net,
 
     # 4. Set up the optimizer, the loss, the learning rate scheduler and the loss scaling for AMP
     optimizer = optim.RMSprop(net.parameters(), lr=learning_rate, weight_decay=1e-8, momentum=0.9)
+    if _optimizer is not None:
+        optimizer.load_state_dict(_optimizer)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2)  # goal: maximize Dice score
     grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
     criterion = nn.CrossEntropyLoss()
     global_step = 0
 
     # 5. Begin training
-    for epoch in range(1, epochs+1):
+    for epoch in range(start_epoch, epochs+1):
         net.train()
         epoch_loss = 0
         with tqdm(total=n_train, desc=f'Epoch {epoch}/{epochs}', unit='img') as pbar:
@@ -184,7 +189,9 @@ if __name__ == '__main__':
     # Change here to adapt to your data
     # n_channels=3 for RGB images
     # n_classes is the number of probabilities you want to get per pixel
-    net = ResUNet(n_channels=3, n_classes=args.classes, bilinear=args.bilinear)
+    net = ResUnetv2(n_channels=3, n_classes=args.classes, bilinear=args.bilinear)
+    _optimizer = None
+    start_epoch = None
 
     logging.info(f'Network:\n'
                  f'\t{net.n_channels} input channels\n'
@@ -194,6 +201,9 @@ if __name__ == '__main__':
     if args.load:
         load_checkpoint(model=net,
                         checkpoint_path=args.load)
+        ckpt = torch.load(args.load)
+        _optimizer = ckpt["optimizer"]
+        start_epoch = ckpt["epoch"]
 
     net.to(device=device)
 
@@ -215,4 +225,6 @@ if __name__ == '__main__':
               img_scale=args.scale,
               val_percent=args.val / 100,
               amp=args.amp,
-              model_ema=model_ema)
+              model_ema=model_ema,
+              _optimizer=_optimizer,
+              start_epoch=start_epoch)
