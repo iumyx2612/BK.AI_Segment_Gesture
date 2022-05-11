@@ -11,7 +11,10 @@ from utils.augmentations import *
 
 
 class BasicDataset(Dataset):
-    def __init__(self, images_dir: str, masks_dir: str, scale: float = 1.0, task: str = 'train', mask_suffix: str = ''):
+    def __init__(self, images_dir: str, masks_dir: str, scale: float = 1.0, task: str = 'train',
+                 augment=False,
+                 augment_config=None,
+                 mask_suffix: str = ''):
         self.images_dir = Path(images_dir)
         self.masks_dir = Path(masks_dir)
         assert 0 < scale <= 1, 'Scale must be between 0 and 1'
@@ -23,6 +26,12 @@ class BasicDataset(Dataset):
         if not self.ids:
             raise RuntimeError(f'No input file found in {images_dir}, make sure you put your images there')
         logging.info(f'Creating dataset with {len(self.ids)} examples')
+
+        self.augment = augment
+        if self.augment and augment_config is not None:
+            self.augment_config = augment_config
+            self.transform = Augmentation(self.augment_config)
+            self.transform.define_aug()
 
     def __len__(self):
         return len(self.ids)
@@ -40,8 +49,6 @@ class BasicDataset(Dataset):
                 img_ndarray = img_ndarray[np.newaxis, ...]
             else:
                 img_ndarray = img_ndarray.transpose((2, 0, 1))
-
-        img_ndarray = img_ndarray / 255
 
         return img_ndarray
 
@@ -70,6 +77,12 @@ class BasicDataset(Dataset):
 
         img = self.preprocess(img, self.scale, is_mask=False)
         mask = self.preprocess(mask, self.scale, is_mask=True)
+
+        if self.task == 'train':
+            if self.augment:
+                img, mask = self.transform(img, mask)
+
+        img, mask = img / 255, mask / 255
 
         return {
             'image': torch.as_tensor(img.copy()).float().contiguous(),

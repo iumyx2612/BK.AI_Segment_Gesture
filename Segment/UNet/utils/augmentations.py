@@ -1,114 +1,94 @@
-import logging
-from os import listdir
-from os.path import splitext
-from pathlib import Path
+import yaml
+import os
 
-import cv2
-import types
-import numpy as np
-import torch
-from numpy import random
-from math import sqrt
-from PIL import Image
-from torch.utils.data import Dataset
-from torchvision import transforms
+import albumentations as A
 
 
-# Combine between Transform Augmentation
-class Compose:
-    """Composes several augmentations together.
-    Args:
-        transforms (List[Transform]): list of transforms to compose.
-    Example:
-        >>> augmentations.Compose([
-        >>>     transforms.CenterCrop(10),
-        >>>     transforms.ToTensor(),
-        >>> ])
-    """
-
-    def __init__(self, transforms):
-        self.transforms = transforms
-
-    def __call__(self, img, masks):
-        for t in self.transforms:
-            img, masks = t(img, masks)
-        return img, masks
-
-
-class BaseTransform:
-    """ Base transform when training model """
-    def __init__(self):
-        self.augment = Compose([
-            RandomContrast(lower=0.5, upper=1.5),
-            RandomBrightness(delta=32),
-            RandomFlip()
-        ])
-
-    def __call__(self, img, masks):
-        img = img.astype('float64')
-        return self.augment(img, masks)
-
-
-class RandomHue:
-    def __init__(self, delta=32.0):
-        assert delta >= 0.0 and delta <= 360.0
-        self.delta = delta
-
-    def __call__(self, image, masks):
-        if random.randint(2):
-            image[:, :, 0] += random.uniform(-self.delta, self.delta)
-            image[:, :, 0][image[:, :, 0] > 360.0] -= 360.0
-            image[:, :, 0][image[:, :, 0] < 0.0] += 360.0
-        return image, masks
-
-
-class ConvertColor:
-    def __init__(self, current='BGR', transform='HSV'):
-        self.transform = transform
-        self.current = current
-
-    def __call__(self, image, masks):
-        if self.current == 'BGR' and self.transform == 'HSV':
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        elif self.current == 'HSV' and self.transform == 'BGR':
-            image = cv2.cvtColor(image, cv2.COLOR_HSV2BGR)
+# Class for normal augmentations
+class Augmentation:
+    def __init__(self, config):
+        if isinstance(config, dict):
+            config = config
+        elif os.path.isfile(config):
+            with open(config) as f:
+                config = yaml.safe_load(f)
         else:
-            raise NotImplementedError
-        return image, masks
+            raise TypeError
+        self.config = config
 
+    # load corresponding Albumentation transform function with config
+    def define_aug(self):
+        # Recursively compose transform
+        self.augs = {}
+        if self.config["albumentation"]["blur"]["prob"] > 0:
+            self.blur = A.Blur(
+                blur_limit=self.config["albumentation"]["blur"]["strength"],
+                p=self.config["albumentation"]["blur"]["prob"]
+            )
+            self.augs.update({
+                "blur": self.blur
+            })
+        if self.config["albumentation"]["clahe"]["prob"] > 0:
+            self.CLAHE = A.CLAHE(
+                clip_limit=self.config["albumentation"]["clahe"]["clip_limit"],
+                tile_grid_size=self.config["albumentation"]["clahe"]["tile_grid_size"],
+                p=self.config["albumentation"]["clahe"]["prob"]
+            )
+            self.augs.update({
+                "clahe": self.CLAHE
+            })
+        if self.config["albumentation"]["color_jitter"]["prob"] > 0:
+            self.color_jitter = A.ColorJitter(
+                brightness=self.config["albumentation"]["color_jitter"]["brightness"],
+                contrast=self.config["albumentation"]["color_jitter"]["contrast"],
+                saturation=self.config["albumentation"]["color_jitter"]["saturation"],
+                hue=self.config["albumentation"]["color_jitter"]["hue"],
+                p=self.config["albumentation"]["color_jitter"]["prob"]
+            )
+            self.augs.update({
+                "color_jitter": self.color_jitter
+            })
+        if self.config["albumentation"]["coarse_dropout"]["prob"] > 0:
+            self.cutout = A.CoarseDropout(
+                max_holes=self.config["albumentation"]["coarse_dropout"]["max_holes"],
+                max_height=self.config["albumentation"]["coarse_dropout"]["max_height"],
+                max_width=self.config["albumentation"]["coarse_dropout"]["max_width"],
+                min_holes=self.config["albumentation"]["coarse_dropout"]["min_holes"],
+                min_height=self.config["albumentation"]["coarse_dropout"]["min_height"],
+                min_width=self.config["albumentation"]["coarse_dropout"]["min_width"],
+                fill_value=self.config["albumentation"]["coarse_dropout"]["fill_value"],
+                p=self.config["albumentation"]["coarse_dropout"]["prob"]
+            )
+            self.augs.update({
+                "cutout": self.cutout
+            })
+        if self.config["albumentation"]["downscale"]["prob"] > 0:
+            self.downscale = A.Downscale(
+                scale_min=self.config["albumentation"]["downscale"]["scale_min"],
+                scale_max=self.config["albumentation"]["downscale"]["scale_max"],
+                p=self.config["albumentation"]["downscale"]["prob"]
+            )
+            self.augs.update({
+                "downscale": self.downscale
+            })
+        if self.config["albumentation"]["affine"]["prob"] > 0:
+            self.affine = A.Affine(
+                scale=self.config["albumentation"]["affine"]["scale"],
+                translate_percent=self.config["albumentation"]["affine"]["translate_percent"],
+                rotate=self.config["albumentation"]["affine"]["rotate"],
+                shear=self.config["albumentation"]["affine"]["shear"],
+                fit_output=self.config["albumentation"]["affine"]["fit_output"],
+                p=self.config["albumentation"]["affine"]["prob"]
+            )
 
-class RandomContrast:
-    def __init__(self, lower=0.5, upper=1.5):
-        self.lower = lower
-        self.upper = upper
-        assert self.upper >= self.lower, "contrast upper must be >= lower."
-        assert self.lower >= 0, "contrast lower must be non-negative."
+        list_transforms = [self.augs[transform] for transform in self.augs.keys()]
 
-    # expects float image
-    def __call__(self, image, masks):
-        if random.randint(2):
-            alpha = random.uniform(self.lower, self.upper)
-            image *= alpha
-        return image, masks
+        self.transforms = A.Compose(list_transforms)
 
+    def __call__(self, image, mask):
+        if self.augs:
+            transformed = self.transforms(image=image, mask=mask)
+            image = transformed["image"]
+            mask = transformed["mask"]
+        return image, mask
 
-class RandomBrightness:
-    def __init__(self, delta=32):
-        assert delta >= 0.0
-        assert delta <= 255.0
-        self.delta = delta
-
-    def __call__(self, image, masks):
-        if random.randint(2):
-            delta = random.uniform(-self.delta, self.delta)
-            image += delta
-        return image, masks
-
-
-class RandomFlip:
-    def __call__(self, image, masks):
-        height, _, _ = image.shape
-        if random.randint(2):
-            image = image[:, ::-1, :]
-            masks = masks[:, ::-1]
-        return image, masks
