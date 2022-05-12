@@ -9,11 +9,13 @@ import cv2
 import torch.nn.functional as F
 from PIL import Image
 from torchvision import transforms
+import matplotlib.pyplot as plt
 
 from utils.data_loading import BasicDataset
 from unet import UNet
+from unet import ResUnetv2, ResUNet
 from utils.utils import plot_img_and_mask
-from utils.model import load_checkpoint
+from utils.model import load_checkpoint, ModelEma
 
 
 def predict_img(net,
@@ -193,13 +195,22 @@ def evaluate_image(net, path: str, save_path: str):
                        out_threshold=args.mask_threshold,
                        device=device)
     result = np.array(mask_to_image(mask))
-    result = result.reshape(result.shape[0], result.shape[1], 1)
-    cv2.imwrite(save_path, result)
+    result = np.expand_dims(result, -1)
+    result = np.repeat(result, 3, axis=-1)
+    img = np.asarray(img)
+
+    debug = cv2.addWeighted(img, 0.5, result, 0.5, 0)
+
+    plt.imshow(debug)
+    plt.title(path)
+    plt.show()
+    #cv2.imwrite(save_path, result)
 
 
 def evaluate_images(net, path: str, save_path: str):
     if not os.path.isdir(save_path):
-        os.makedirs(save_path)
+        if save_path != "":
+            os.makedirs(save_path)
 
     for filename in os.listdir(path):
         evaluate_image(net, os.path.join(path, filename), os.path.join(save_path, filename))
@@ -224,7 +235,7 @@ def evaluate(net, args):
 if __name__ == '__main__':
     args = get_args()
 
-    net = UNet(n_channels=3, n_classes=2, bilinear=args.bilinear)
+    net = ResUnetv2(n_channels=3, n_classes=2, bilinear=args.bilinear)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logging.info(f'Loading model {args.model}')
