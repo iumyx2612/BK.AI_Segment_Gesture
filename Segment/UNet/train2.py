@@ -37,14 +37,15 @@ def train_net(net,
               amp: bool = False,
               model_ema=None,
               _optimizer=None,
-              start_epoch=None):
+              start_epoch=None,
+              augment_config=None):
     start_epoch = start_epoch if start_epoch is not None else 1
     # 1. Create dataset
     try:
         train_set = CarvanaDataset(dir_img_train, dir_mask_train, img_scale, task='train')
         val_set = CarvanaDataset(dir_img_val, dir_mask_val, img_scale, task='val')
     except (AssertionError, RuntimeError):
-        train_set = BasicDataset(dir_img_train, dir_mask_train, img_scale, task='train')
+        train_set = BasicDataset(dir_img_train, dir_mask_train, img_scale, task='train', augment=True, augment_config=augment_config)
         val_set = BasicDataset(dir_img_val, dir_mask_val, img_scale, task='val')
 
     # 2. Split into train / validation partitions
@@ -164,6 +165,7 @@ def train_net(net,
 def get_args():
     parser = argparse.ArgumentParser(description='Train the UNet on images and target masks')
     parser.add_argument('--epochs', '-e', metavar='E', type=int, default=5, help='Number of epochs')
+    parser.add_argument('--augment_config', type=str, default=None, help='File config augmentations')
     parser.add_argument('--batch-size', '-b', dest='batch_size', metavar='B', type=int, default=1, help='Batch size')
     parser.add_argument('--learning-rate', '-l', metavar='LR', type=float, default=1e-5,
                         help='Learning rate', dest='lr')
@@ -181,6 +183,8 @@ def get_args():
 
 if __name__ == '__main__':
     args = get_args()
+
+    # Load augment.yaml config
 
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -227,4 +231,5 @@ if __name__ == '__main__':
               amp=args.amp,
               model_ema=model_ema,
               _optimizer=_optimizer,
-              start_epoch=start_epoch)
+              start_epoch=start_epoch,
+              augment_config=args.augment_config)
